@@ -1,67 +1,33 @@
 var express = require('express');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
-var book = require('./book.model');
 var Survey = require('./encuesta.model');
+var question = require('./pregunta.model');
+
 
 var app = express();
 var port= 8080;
 //ZWheTIS8IaqaWMUu
-//mongodb+srv://camgaro:wCj6ZH34aLjEbnmE@cluster0-surhe.gcp.mongodb.net/test?retryWrites=true
-//var db = 'mongodb+srv://camgaro:ZWheTIS8IaqaWMUu@cluster0-surhe.gcp.mongodb.net/test?retryWrites=true';
-var db = 'mongodb://localhost/Prueba';
-//var db = 'mongodb+srv://camgaro:wCj6ZH34aLjEbnmE@cluster0-surhe.gcp.mongodb.net/test?retryWrites=true';
+var db = 'mongodb://camgaro:ZWheTIS8IaqaWMUu@cluster0-shard-00-00-surhe.gcp.mongodb.net:27017,cluster0-shard-00-01-surhe.gcp.mongodb.net:27017,cluster0-shard-00-02-surhe.gcp.mongodb.net:27017/Encuestas?ssl=true&replicaSet=Cluster0-shard-0&authSource=admin&retryWrites=true';
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended : true
 }));
 
+app.use((req,res,next) =>{
+    res.setHeader("Access-Control-Allow-Origin","*");
+    res.setHeader("Access-Control-Allow-Headers","Origin, X-Request-With,Content-Type, Accept");
+    res.setHeader("Access-Control-Allow-Methods","GET,POST,PATCH,DELETE,OPTIONS");
+    next();
+  });
+
+
 mongoose.connect(db, {useNewUrlParser: true})
 .then(()=>{
     console.log("conected!");
 }).catch(err =>{
     console.log("failed to connect",err.stack);
-});
-
-app.get('/books', function(req,res){
-    book.find({}).exec(function(err,books){
-        if(err){
-            res.send("Error");
-        }else{
-            console.log(books);
-            res.json(books);
-        }
-    });
-});
-
-app.get('/books/:id', function(req,res){
-    console.log('Obteniendo libro');
-    book.findOne({
-        _id: req.params.id
-    }).exec(function(err,bookres){
-        if(err){
-            res.send('Error');
-        }else{
-            res.json(bookres);
-        }
-    })
-});
-
-app.post('/books',function(req,res){
-    var newBook = new book();
-    newBook.title = req.body.title;
-    newBook.author = req.body.author;
-    newBook.category = req.body.category;
-
-    newBook.save(function(err,book){
-        if(err){
-            res.send('Error guardando');
-        }else{
-            console.log(book);
-            res.send(book);
-        }       
-    });
 });
 
 app.get('/survey',function(req,res){
@@ -109,44 +75,58 @@ app.put('/survey/:id',function(req,res){
     });
 });
 
-app.put('/book/:id',function(req,res){
-   book.findOneAndUpdate({
-       _id: req.params.id
-   },{
-       $set:{
-           title: req.body.title, 
-           author: req.body.author, 
-           category: req.body.category
+app.put('/surveystate/:id',function(req,res){
+    Survey.findByIdAndUpdate({
+        _id: req.params.id
+    },{
+        $set:{
+            isactive: req.body.isactive
         }
-    },{upsert:true}
-   ,function(err,newBook){
+    },{upsert:true},function(err,isactive){
         if(err){
             console.log("Error");
         }else{
-            console.log(newBook);
-            res.send(newBook);
-        }
-   });
-});
-
-app.delete('/book/:category',function(req,res){
-    book.deleteMany({category: req.params.category},function(err,book){
-        if(err){
-            console.log("Error borrando por categoria");
-        }else{
-            res.send('Registros eliminados');
+            console.log(isactive);
+            res.send(isactive);
         }
     });
 });
 
-
-app.delete('/book/:category', function(req,res){
-    book.findOneAndRemove({category: req.params.category},function(err,newBook){
+app.delete('/survey/:id',function(req,res){
+    Survey.findOneAndDelete({_id: req.params.id},function(err,survey){
         if(err){
             res.send('error en el borrado');
         }else{
             res.status(204);
-            res.send(newBook);
+            res.send(survey);
+        }
+    });
+});
+
+app.post('/question',function(req,res){
+    var newQuestion = new question();
+    newQuestion.question = req.body.question;
+    newQuestion.author = req.body.author;
+    newQuestion.category = req.body.category;
+    newQuestion.formtype = req.body.formtype;
+    newQuestion.save(function(err,newQuestion){
+        if(err){
+            console.log(err);
+            res.send('Error guardando');
+        }else{
+            console.log(newQuestion);
+            res.send(newQuestion);
+        }   
+    });
+});
+
+app.get('/questions',function(req,res){
+    question.find({}).exec(function(err,question){
+        if(err){
+            res.send("Error");
+        }else{
+            console.log(question);
+            res.json(question);
         }
     });
 });

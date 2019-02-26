@@ -14,4 +14,4 @@ var SurveySchema = new Schema({
     isactive: Boolean
   });
   
-  module.exports = mongoose.model('polls', SurveySchema);
+  module.exports = mongoose.model('surveys', SurveySchema);
